@@ -1,0 +1,105 @@
+*** publish db project ***
+--CF230512: unable publish error, change mssql option
+Enable SQLCMD Scripting by Default
+To turn on SQLCMD scripting by default, on the Tools menu, select Options, expand Query Execution, and SQL Server, select the General page and then check the By default open new queries in SQLCMD Mode box.
+
+--CF230509: existing fields must be <= new fields, else run the following in Management Studio to alter first
+ALTER TABLE [dbo].[Loc]
+ALTER COLUMN [Name] [nvarchar](30) NULL
+ALTER TABLE [dbo].[Loc]
+ALTER COLUMN [Dord] [smallint] NULL
+
+Login:
+admin/tempP@ss123 admin/Bq2008.
+
+
+Roadmap:
+-customer service request
+-online cost update
+-port silverlight (end of life) to web
+-tyre manufacturer date code
+-add dealer price
+-pdf/img hard copy document attachment
+-miri stock centralize code
+-pos sale below / cancel bill authorize by phone app
+-real time sale monitor
+-realtime stock monitor
+-staff attendant phone app alert (shop open time)
+-SingleSignOn (SSO)
+https://docs.microsoft.com/en-us/aspnet/core/security/cookie-sharing?view=aspnetcore-2.2
+-cache resize image to increase performance
+https://andrewlock.net/using-imagesharp-to-resize-images-in-asp-net-core-part-3-caching/
+-able to predefine favorites for transaction reports
+
+
+***181009-Webapi - Generate Data Context from database
+>Step1:
+PM>Install-Package Microsoft.EntityFrameworkCore.SqlServer (if not installed)
+PM>Install-Package Microsoft.EntityFrameworkCore.SqlServer.Design (if not installed)
+PM>Install-Package Microsoft.EntityFrameworkCore.Tools
+>Step2: (for project ***>>>src.DAL<<<***)
+(Change name before continue, from InvTrack to whatever you want.)
+In src.DAL,>>> 
+PM>Scaffold-DbContext "Server=.\SQLExpress;Database=InvTrack;Trusted_Connection=True;TrustServerCertificate=True;" Microsoft.EntityFrameworkCore.SqlServer -force -OutputDir Models\InvTrack
+
+
+>Step3: \Models\InvTrack\InvTrackContext.cs
+-remove: protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) { ...... }
+>Step4: \appsettings.json
+-add: "ConnectionStrings": { "InvTrackContext": "Server=.\SQLExpress;Database=InvTrack;Trusted_Connection=True;MultipleActiveResultSets=true" },
+>Step5: \Startup.cs
+-add: using DAL.Models.InvTrack;
+    public void ConfigureServices(IServiceCollection services)
+    {	......
+        services.AddDbContext<InvTrackContext>(_ => _.UseSqlServer(Configuration.GetConnectionString("InvTrackContext")));
+    }
+
+-add Location for application user
+QuickApp.db
+(ALTER TABLE dbo.AspNetUsers ADD Loc nvarchar(25) NULL) 
+
+ *********Logs*********************
+ >>>190924
+ -Fix bug for tranprod brand filter
+
+>>>201222
+-Add activity logs
+CREATE TABLE [dbo].[Actlog] (
+    [Id]    INT            IDENTITY (1, 1) NOT NULL,
+    [Name]  NVARCHAR (50)  NOT NULL,
+    [Loc]   NVARCHAR (25)  NULL,
+    [Ip]    NVARCHAR (50)  NULL,
+    [Agent] NVARCHAR (255) NULL,
+    [Query] NVARCHAR (255) NULL,
+    [Referer] NVARCHAR (255) NULL,
+    [Fq]    INT            NOT NULL,
+    [Cdt]   DATETIME       NOT NULL,
+    [Ldt]   DATETIME       NOT NULL,
+    PRIMARY KEY CLUSTERED ([Id] ASC)
+);
+GO
+
+
+**********IIS Deployment**********190328
+-Configure Asp.net Core 2.2 DataProtection: OpenIdDict ~/Connect/Token error:The specified refresh token is invalid
+ (ApplicationPool>>AdvanceSettings>LoadUserProfile=True)
+
+>>>201223: InvTrack3 release
+-Asp.net Core 3.1.10
+ -keep appSettings.json only, delete appSettings.development.json
+ -set >>>Web.Config<<<
+          <environmentVariable name="ASPNETCORE_HTTPS_PORT" value="3990" />
+        <environmentVariable name="COMPLUS_ForceENC" value="1" />
+        <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="Production" />
+
+>>>201226: Version check
+-add file build/post-build.js
+-add file version-check.service.ts
+-add service to app.component.ts
+-add postbuild to package.json
+-add v=2 to prodol slist api call to view new version use in Actlog
+
+***setting checklist for deployment***
+-appsetting.json
+-Web.Config
+
